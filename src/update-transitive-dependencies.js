@@ -2,6 +2,8 @@
 
 import fs from 'node:fs';
 import childProcess from 'node:child_process';
+import process from 'node:process';
+import { globSync } from 'glob';
 
 const updateTransitiveDependencies = () => {
   const dir = fs.readdirSync('./');
@@ -44,10 +46,42 @@ const updateTransitiveDependencies = () => {
     mutableParsedPackageJson.devDependencies[key] = value.replace(/^\^/, '').replace(/^~/, '');
   }
 
+  const workspaceEnabled = ['--workspace', '-w'].includes(process.argv[2]);
+  const workspacePackagePaths = workspaceEnabled
+    ? globSync('*/**/package.json', { ignore: '**/node_modules/**' })
+    : [];
+  const workspacePackageData = workspacePackagePaths
+    .map((path) => {
+      const packageJson = fs.readFileSync(path, 'utf8');
+      let mutableParsedPackageJson = {};
+
+      try {
+        mutableParsedPackageJson = JSON.parse(packageJson);
+      } catch {
+        console.error(`could not parse ${path}`);
+        return;
+      }
+
+      for (const [key, value] of Object.entries(mutableParsedPackageJson.dependencies ?? {})) {
+        mutableParsedPackageJson.dependencies[key] = value.replace(/^\^/, '').replace(/^~/, '');
+      }
+      for (const [key, value] of Object.entries(mutableParsedPackageJson.devDependencies ?? {})) {
+        mutableParsedPackageJson.devDependencies[key] = value.replace(/^\^/, '').replace(/^~/, '');
+      }
+
+      return { path, packageJson, mutableParsedPackageJson };
+    })
+    .filter(Boolean);
+
   console.log('- locking dependency versions');
   fs.writeFileSync('package.json', JSON.stringify(mutableParsedPackageJson, null, 2), {
     flag: 'w+',
   });
+  workspacePackageData.forEach(({ path, mutableParsedPackageJson }) =>
+    fs.writeFileSync(path, JSON.stringify(mutableParsedPackageJson, null, 2), {
+      flag: 'w+',
+    }),
+  );
 
   console.log('- removing node_modules and lock file');
   childProcess.spawnSync('rm', ['-r', 'node_modules'], { stdio: 'inherit' });
@@ -58,6 +92,9 @@ const updateTransitiveDependencies = () => {
 
   console.log('- unlocking dependency versions');
   fs.writeFileSync('package.json', packageJson, { flag: 'w+' });
+  workspacePackageData.forEach(({ path, packageJson }) =>
+    fs.writeFileSync(path, packageJson, { flag: 'w+' }),
+  );
 
   console.log('- updating lockfile');
   childProcess.spawnSync(...installCommand, { stdio: 'inherit' });
