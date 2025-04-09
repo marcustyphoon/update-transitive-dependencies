@@ -23,11 +23,12 @@ const updateTransitiveDependencies = () => {
     return;
   }
 
-  const { lockFile, installCommand } = [
-    { lockFile: 'pnpm-lock.yaml', installCommand: ['pnpm', ['i']] },
-    { lockFile: 'package-lock.json', installCommand: ['npm', ['i']] },
-    { lockFile: 'yarn.lock', installCommand: ['yarn', ['install']] },
-  ].find(({ lockFile }) => dir.includes(lockFile));
+  const { lockFile, installCommand } =
+    [
+      { lockFile: 'pnpm-lock.yaml', installCommand: ['pnpm', ['i']] },
+      { lockFile: 'package-lock.json', installCommand: ['npm', ['i']] },
+      { lockFile: 'yarn.lock', installCommand: ['yarn', ['install']] },
+    ].find(({ lockFile }) => dir.includes(lockFile)) ?? {};
 
   if (!installCommand) {
     console.error('no lock file found! (package manager detection is not implemented)');
