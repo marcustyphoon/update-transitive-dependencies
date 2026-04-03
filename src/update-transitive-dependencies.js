@@ -5,6 +5,13 @@ import childProcess from 'node:child_process';
 import process from 'node:process';
 import { globSync } from 'glob';
 
+const spawn = (...args) => {
+  const result = childProcess.spawnSync(...args);
+  if (result.status !== 0) {
+    process.exit(result.status);
+  }
+};
+
 const updateTransitiveDependencies = () => {
   const dir = fs.readdirSync('./');
 
@@ -85,11 +92,11 @@ const updateTransitiveDependencies = () => {
   );
 
   console.log('- removing node_modules and lock file');
-  childProcess.spawnSync('rm', ['-r', 'node_modules'], { stdio: 'inherit' });
-  childProcess.spawnSync('rm', ['-r', lockFile], { stdio: 'inherit' });
+  spawn('rm', ['-r', 'node_modules'], { stdio: 'inherit' });
+  spawn('rm', ['-r', lockFile], { stdio: 'inherit' });
 
   console.log('- installing dependencies');
-  childProcess.spawnSync(...installCommand, { stdio: 'inherit' });
+  spawn(...installCommand, { stdio: 'inherit' });
 
   console.log('- unlocking dependency versions');
   fs.writeFileSync('package.json', packageJson, { flag: 'w+' });
@@ -98,7 +105,7 @@ const updateTransitiveDependencies = () => {
   );
 
   console.log('- updating lockfile');
-  childProcess.spawnSync(...installCommand, { stdio: 'inherit' });
+  spawn(...installCommand, { stdio: 'inherit' });
 
   console.log('- done! be sure to check that actual dependency versions are unchanged.');
   console.log('- you can commit this as e.g. "chore(deps): Update transitive dependencies"');
