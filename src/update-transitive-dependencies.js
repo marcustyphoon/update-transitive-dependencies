@@ -108,7 +108,9 @@ const updateTransitiveDependencies = () => {
   spawn(...installCommand, { stdio: 'inherit' });
 
   console.log('- done! be sure to check that actual dependency versions are unchanged.');
-  console.log('- you can commit this as e.g. "chore(deps): Update transitive dependencies", "build(deps): Update transitive dependencies", or similar!');
+  console.log(
+    '- you can commit this as e.g. "chore(deps): Update transitive dependencies", "build(deps): Update transitive dependencies", or similar!',
+  );
 };
 
 updateTransitiveDependencies();
