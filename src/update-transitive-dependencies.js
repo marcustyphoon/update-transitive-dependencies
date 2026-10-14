@@ -92,7 +92,7 @@ const updateTransitiveDependencies = () => {
   );
 
   console.log('- removing node_modules and lock file');
-  spawn('rm', ['-r', 'node_modules'], { stdio: 'inherit' });
+  spawn('rm', ['-rf', 'node_modules'], { stdio: 'inherit' });
   spawn('rm', ['-r', lockFile], { stdio: 'inherit' });
 
   console.log('- installing dependencies');
