@@ -3,7 +3,15 @@
 import fs from 'node:fs';
 import childProcess from 'node:child_process';
 import process from 'node:process';
+import util from 'node:util';
 import { globSync } from 'glob';
+
+const { values: parsedArgs } = util.parseArgs({
+  options: {
+    workspace: { type: 'boolean', short: 'w' },
+    cooldown: { type: 'string', short: 'c' },
+  },
+});
 
 const spawn = (...args) => {
   const result = childProcess.spawnSync(...args);
@@ -33,7 +41,12 @@ const updateTransitiveDependencies = () => {
   const { lockFile, installCommand } =
     [
       { lockFile: 'pnpm-lock.yaml', installCommand: ['pnpm', ['i']] },
-      { lockFile: 'package-lock.json', installCommand: ['npm', ['i']] },
+      {
+        lockFile: 'package-lock.json',
+        installCommand: parsedArgs.cooldown
+          ? ['npm', ['i', '--min-release-age', parsedArgs.cooldown]]
+          : ['npm', ['i']],
+      },
       { lockFile: 'yarn.lock', installCommand: ['yarn', ['install']] },
     ].find(({ lockFile }) => dir.includes(lockFile)) ?? {};
 
@@ -54,8 +67,7 @@ const updateTransitiveDependencies = () => {
     mutableParsedPackageJson.devDependencies[key] = value.replace(/^\^/, '').replace(/^~/, '');
   }
 
-  const workspaceEnabled = ['--workspace', '-w'].includes(process.argv[2]);
-  const workspacePackagePaths = workspaceEnabled
+  const workspacePackagePaths = parsedArgs.workspace
     ? globSync('*/**/package.json', { ignore: '**/node_modules/**' })
     : [];
   const workspacePackageData = workspacePackagePaths

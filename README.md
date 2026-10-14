@@ -12,6 +12,10 @@ Run in an npm project with
 
 > `utd`
 
+Run with min-age/cooldown (currently only supported in npm) with
+
+> `utd -c 3`
+
 Run with workspace support (multiple package.json files in the working directory) with
 
 > `utd -w`
